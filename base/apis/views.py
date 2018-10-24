@@ -1,56 +1,46 @@
 from django.shortcuts import render
 from django.http.response import HttpResponse
+from django.core.serializers import serialize
 
 from rest_framework import views, generics, mixins
+from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 
 from .models import Post, User
-from .serializers import PostSerializer
+from .serializers import UserSerializer, PostSerializer
 
 from google.oauth2 import id_token
 from google.auth.transport import requests
 
 CLIENT_ID = '877944658856-1tr4gmmtc8nm4ur7m1p3jv2e9omm8fo3.apps.googleusercontent.com'
 
-class UserAPI(views.APIView):
-    def post(self, request):
-        access_token = request.data['access_token']
-        if access_token:
-            try:
-                User.objects.get(auth_token=access_token)
-                print('good')
-            except User.DoesNotExist:
-                print('bad')
-        return Response('on develop')
 
-class PostAPI(generics.GenericAPIView):
+class UserAPI(generics.ListAPIView):
+    serializer_class = UserSerializer
+
+    def get_queryset(self):
+        access_token = self.request.query_params.get('access_token')
+        user = User.objects.filter(auth_token=access_token)
+        return user
+
+class PostAPI(generics.ListAPIView):
     serializer_class = PostSerializer
 
     def get_queryset(self):
-        request_id_token = self.request.query_params.get('id_token')
-        auth_user = getUserByToken(request_id_token)
-
-        if auth_user is not None:
-            queryset = Post.objects.filter(user=auth_user)
-            return queryset
-
-        else:
-            return Response('invalid token')
-
-def getUserByToken(request_id_token):
-    try:
-        idinfo = id_token.verify_oauth2_token(request_id_token, requests.Request(), CLIENT_ID)
-        if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
-            return None
-
+        access_token = self.request.query_params.get('access_token')
         try:
-            return User.objects.get(password=idinfo['sub'])
-        except OAuthUser.DoesNotExist:
-            return None
+            user = User.objects.get(auth_token=access_token)
+            post = Post.objects.filter(user=user)
+            return post
+        except User.DoesNotExist:
+            return []
 
-    except ValueError:
-        return None
+    # def get(self, request, *args, **kwargs):
+    #     return self.list(request, *args, **kwargs)
+
+    # def post(self, request, *args, **kwargs):
+    #     return self.create(request, *args, **kwargs)
 
 
 # class AuthUserAPI(generics.GenericAPIView):

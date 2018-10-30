@@ -6,9 +6,10 @@ from rest_framework import views, generics, mixins
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
+from rest_framework.exceptions import ValidationError
 
-from .models import Post, User
-from .serializers import UserSerializer, PostSerializer
+from .models import Post, User, Reply
+from .serializers import UserSerializer, PostSerializer, ReplySerializer
 
 from google.oauth2 import id_token
 from google.auth.transport import requests
@@ -20,27 +21,42 @@ class UserAPI(generics.ListAPIView):
     serializer_class = UserSerializer
 
     def get_queryset(self):
-        access_token = self.request.query_params.get('access_token')
-        user = User.objects.filter(auth_token=access_token)
+        current_user = self.request.user
+        if current_user:
+            user = User.objects.filter(email=current_user)
         return user
 
-class PostAPI(generics.ListAPIView):
+
+class PostAPI(generics.ListCreateAPIView):
     serializer_class = PostSerializer
+    queryset = Post.objects.all().order_by('-created_date')
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    # 나중에 친구기능 추가하면 쓸거 같음
+    # def list(self, request):
+    #     queryset = self.get_queryset()
+    #     serializer = PostSerializer(queryset, many=True)
+    #     return Response(serializer.data)
+
+
+class ReplyAPI(generics.ListCreateAPIView):
+    serializer_class = ReplySerializer
 
     def get_queryset(self):
-        access_token = self.request.query_params.get('access_token')
+        post_id = self.request.query_params.get('post_id')
+        return Reply.objects.filter(post=post_id)
+
+    def perform_create(self, serializer):
+        if not 'post_id' in self.request.data:
+            raise ValidationError("You need 'post_id'")
+        post_id = self.request.data['post_id']
         try:
-            user = User.objects.get(auth_token=access_token)
-            post = Post.objects.filter(user=user)
-            return post
-        except User.DoesNotExist:
-            return []
-
-    # def get(self, request, *args, **kwargs):
-    #     return self.list(request, *args, **kwargs)
-
-    # def post(self, request, *args, **kwargs):
-    #     return self.create(request, *args, **kwargs)
+            target_post = Post.objects.get(id=post_id)
+            serializer.save(user=self.request.user, post=target_post)
+        except Post.DoesNotExist:
+            raise ValidationError("invaild post id")
 
 
 # class AuthUserAPI(generics.GenericAPIView):

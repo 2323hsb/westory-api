@@ -11,6 +11,7 @@ class UserAdmin(BaseUserAdmin):
 
     fieldsets = (
         (None, {'fields': ('email', 'username','password')}),
+        ('Profiles', {'fields': ('google_id', 'profile_img')}),
         ('Permissions', {'fields': ('is_staff',)}),
     )
     add_fieldsets = (

@@ -4,12 +4,31 @@ from django.utils import timezone
 from django.contrib.auth.models import (BaseUserManager, AbstractBaseUser, PermissionsMixin)
 
 class Post(models.Model):
-    user = models.ForeignKey('User', on_delete=models.CASCADE)
+    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='posts')
     content = models.TextField(blank=True, max_length=2048)
     created_date = models.DateTimeField(auto_now_add=True)
 
-    # def __str__(self):
-    #     return self.created_date
+    @property
+    def user_username(self):
+        return self.user.username
+    
+    @property
+    def user_profile_img(self):
+        return self.user.profile_img
+
+class Reply(models.Model):
+    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='replys')
+    post = models.ForeignKey('Post', on_delete=models.CASCADE, related_name='replys')
+    content = models.TextField(max_length=2048)
+    created_date = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def user_username(self):
+        return self.user.username
+
+    @property
+    def user_profile_img(self):
+        return self.user.profile_img
 
 # class Image(models.Model):
 #     image = models.ImageField(blank=True, upload_to='files/images/%Y/%m/%d/')
@@ -60,7 +79,14 @@ class User(AbstractBaseUser, PermissionsMixin):
     google_id = models.CharField(
         db_index=True,
         max_length=255,
-        unique=True
+        unique=True,
+        blank=True,
+        null=True,
+    )
+    
+    profile_img = models.URLField(
+        verbose_name="google's profile image url",
+        blank=True
     )
 
     ''' 

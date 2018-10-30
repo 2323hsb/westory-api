@@ -38,10 +38,13 @@ class SignUpWithGoogle(views.APIView):
             google_id = idinfo['sub']
             google_email = idinfo['email']
             google_name = idinfo['name']
+            google_profile_img_url = idinfo['picture']
+
+            print(google_id, google_email)
 
             if User.objects.filter(google_id=google_id):
                 json_response = {
-                    'status': 'success',
+                    'status': 'fail',
                     'message': 'user already exists',
                 }
                 return Response(json_response)
@@ -51,7 +54,7 @@ class SignUpWithGoogle(views.APIView):
                     'message': 'create new user',
                 }
                 newUser = User(email=google_email,
-                               username=google_name, google_id=google_id)
+                               username=google_name, google_id=google_id, profile_img=google_profile_img_url)
                 newUser.save()
                 return Response(json_response)
 
@@ -81,7 +84,7 @@ class SignIn(ObtainAuthToken):
             google_id = idinfo['sub']
             try:
                 user = User.objects.get(google_id=google_id)
-                token, created = Token.objects.get_or_create(user=user)
+                token, _ = Token.objects.get_or_create(user=user)
 
                 return Response({
                     'status': 'success',
@@ -89,9 +92,10 @@ class SignIn(ObtainAuthToken):
                 })
             except User.DoesNotExist:
                 json_response = {
-                    'status': 'fail',
-                    'message': 'invalid id',
+                    'status': 'new',
+                    'message': 'user does not exist',
                 }
+                return Response(json_response)
         except ValueError:
             json_response = {
                 'status': 'fail',

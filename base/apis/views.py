@@ -7,6 +7,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import ValidationError
+from rest_framework.pagination import LimitOffsetPagination
 
 from .models import Post, User, Reply
 from .serializers import UserSerializer, PostSerializer, ReplySerializer
@@ -30,6 +31,7 @@ class UserAPI(generics.ListAPIView):
 class PostAPI(generics.ListCreateAPIView):
     serializer_class = PostSerializer
     queryset = Post.objects.all().order_by('-created_date')
+    pagination_class = LimitOffsetPagination
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -40,6 +42,13 @@ class PostAPI(generics.ListCreateAPIView):
     #     serializer = PostSerializer(queryset, many=True)
     #     return Response(serializer.data)
 
+# class NewPostAPI(generics.ListCreateAPIView):
+#     serializer_class = PostSerializer
+#     queryset = Post.objects.all().order_by('-created_date')
+#     pagination_class = LimitOffsetPagination
+
+#     def perform_create(self, serializer):
+#         serializer.save(user=self.request.user)
 
 class ReplyAPI(generics.ListCreateAPIView):
     serializer_class = ReplySerializer

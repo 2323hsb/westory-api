@@ -24,6 +24,6 @@ class UserAdmin(BaseUserAdmin):
     ordering = ('email',)
     filter_horizontal = ()
 
-# admin.site.register(Post)
+admin.site.register(Post)
 admin.site.register(User, UserAdmin)
 admin.site.unregister(Group)

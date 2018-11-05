@@ -5,6 +5,7 @@ from rest_framework.authtoken.views import obtain_auth_token
 
 urlpatterns = [
     path('user', UserAPI.as_view()),
+    # path('new_post', NewPostAPI.as_view()),
     # path('public-user', PublicUserAPI.as_view()),
     path('post', PostAPI.as_view()),
     path('reply', ReplyAPI.as_view()),

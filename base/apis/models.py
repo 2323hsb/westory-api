@@ -16,6 +16,10 @@ class Post(models.Model):
     def user_profile_img(self):
         return self.user.profile_img
 
+    # @property
+    # def reply_count(self):
+    #     return self.reply.objects.count()
+
 class Reply(models.Model):
     user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='replys')
     post = models.ForeignKey('Post', on_delete=models.CASCADE, related_name='replys')
@@ -134,4 +138,3 @@ from rest_framework.authtoken.models import Token
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     if created:
         Token.objects.create(user=instance)
-    

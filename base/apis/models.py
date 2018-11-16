@@ -7,6 +7,8 @@ class Post(models.Model):
     user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='posts')
     content = models.TextField(blank=True, max_length=2048)
     created_date = models.DateTimeField(auto_now_add=True)
+    like_users = models.ManyToManyField('User', default=None, blank=True, related_name='like_posts')
+    # image = models.ImageField(blank=True, upload_to='files/images/%Y/%m/%d/')
 
     @property
     def user_username(self):
@@ -15,10 +17,6 @@ class Post(models.Model):
     @property
     def user_profile_img(self):
         return self.user.profile_img
-
-    # @property
-    # def reply_count(self):
-    #     return self.reply.objects.count()
 
 class Reply(models.Model):
     user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='replys')
@@ -33,9 +31,6 @@ class Reply(models.Model):
     @property
     def user_profile_img(self):
         return self.user.profile_img
-
-# class Image(models.Model):
-#     image = models.ImageField(blank=True, upload_to='files/images/%Y/%m/%d/')
 
 class UserManager(BaseUserManager):
     def create_user(self, username, email, password):
@@ -93,14 +88,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         blank=True
     )
 
-    ''' 
-        null = True: Record 생성 시 NULL값이 들어가는 것을 허용, Update시에는 불허함
-        null = False: Record 생성 시 NULL값 비허용
-        blank = True: Update 에서도 빈 값을 허용
-    '''
-
-    # profile = models.OneToOneField('profiles.Profile', on_delete=models.CASCADE, null=True, blank=True)
-
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
@@ -111,23 +98,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
-
-# class OAuthUser(models.Model):
-#     email = models.EmailField(
-#         db_index = True,
-#         max_length = 255,
-#         unique = True,
-#     )
-
-#     name = models.CharField(
-#         max_length=255, 
-#         unique=False
-#     )
-
-#     auth_id = models.CharField(
-#         max_length=255,
-#         unique=True
-#     )
 
 from django.conf import settings
 from django.db.models.signals import post_save

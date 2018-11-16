@@ -17,7 +17,6 @@ from google.auth.transport import requests
 
 CLIENT_ID = '877944658856-1tr4gmmtc8nm4ur7m1p3jv2e9omm8fo3.apps.googleusercontent.com'
 
-
 class UserAPI(generics.ListAPIView):
     serializer_class = UserSerializer
 
@@ -36,19 +35,46 @@ class PostAPI(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
-    # 나중에 친구기능 추가하면 쓸거 같음
-    # def list(self, request):
-    #     queryset = self.get_queryset()
-    #     serializer = PostSerializer(queryset, many=True)
-    #     return Response(serializer.data)
+class LikesAPI(views.APIView):
+    def get(self, request, *args, **kwargs):
+        if not 'post_id' in self.request.query_params:
+            like_post_list = self.request.user.like_posts.all()
+            results = []
+            for like_post in like_post_list:
+                results.append(like_post.pk)
+            
+            return Response(data=results)
+        else:
+            post_id = self.request.query_params.get('post_id')
+            try:
+                target_post = Post.objects.get(id=post_id)
+                like_count = target_post.like_users.all().count()
+                is_like = False
+                if self.request.user in target_post.like_users.all():
+                    is_like = True
+                results = {}
+                results['like_count'] = like_count
+                results['is_like'] = is_like
+                return Response(data=results)
+            except Post.DoesNotExist:
+                raise ValidationError("invaild post id")
 
-# class NewPostAPI(generics.ListCreateAPIView):
-#     serializer_class = PostSerializer
-#     queryset = Post.objects.all().order_by('-created_date')
-#     pagination_class = LimitOffsetPagination
+    def post(self, request, *args, **kwargs):
+        if not 'post_id' in self.request.data:
+            raise ValidationError("You need 'post_id'")
+        post_id = self.request.data['post_id']
+        try:
+            target_post = Post.objects.get(id=post_id)
+            is_like = self.request.data['is_like']
+            if is_like == 'true':
+                target_post.like_users.add(self.request.user)
+            else:
+                target_post.like_users.remove(self.request.user)
+            target_post.save()
+        except Post.DoesNotExist:
+            raise ValidationError("invaild post id")
 
-#     def perform_create(self, serializer):
-#         serializer.save(user=self.request.user)
+        return Response(data="a")
 
 class ReplyAPI(generics.ListCreateAPIView):
     serializer_class = ReplySerializer
@@ -66,37 +92,6 @@ class ReplyAPI(generics.ListCreateAPIView):
             serializer.save(user=self.request.user, post=target_post)
         except Post.DoesNotExist:
             raise ValidationError("invaild post id")
-
-
-# class AuthUserAPI(generics.GenericAPIView):
-#     serializer_class = UserSerializer
-
-#     def post(self, request, *args, **kwargs):
-#         email = request.data['email']
-#         password = request.data['password']
-
-#         try:
-#             user = User.objects.get(email=email, password=password)
-#         except User.DoesNotExist:
-#             return Response({'Error': 'Invalid User'}, status='400')
-
-#         return Response({'Error': 'Not Ready Service'}, status='500')
-
-    # def get(self, request, *args, **kargs):
-    #     pass
-
-    # def post(self, request, *args, **kargs):
-    #     pass
-
-# class CreatePostAPI(generics.GenericAPIView, mixins.ListModelMixin, mixins.CreateModelMixin):
-#     queryset = Post.objects.all().order_by('-created_date')[:5]
-#     serializer_class = PostSerializer
-
-#     def get(self, request, *args, **kargs):
-#         return self.list(request, *args, **kargs)
-
-#     def post(self, request, *args, **kargs):
-#         return self.create(request, *args, **kargs)
 
 # class UploadImageAPI(generics.GenericAPIView, mixins.CreateModelMixin):
 #     queryset = Image.objects.all()

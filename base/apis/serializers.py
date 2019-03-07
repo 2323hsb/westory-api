@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Post, Reply
+from .models import User, Post, Reply, Story, UploadImage
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -28,3 +28,16 @@ class ReplySerializer(serializers.ModelSerializer):
     class Meta:
         model = Reply
         fields = ['user_username', 'user_profile_img', 'content', 'created_date']
+
+class StorySerializer(serializers.ModelSerializer):
+    user_username = serializers.ReadOnlyField()
+    user_profile_img = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = Story
+        fields = ['user_username', 'user_profile_img', 'title', 'content', 'created_date']
+
+class ImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UploadImage
+        fields = ['image']

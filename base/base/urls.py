@@ -7,7 +7,7 @@ swaggerView = get_swagger_view(title='Hello Swagger API')
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('rest_framework.urls')),
-    path('swagger/', swaggerView),
+    # path('swagger/', swaggerView),
 
     path('', include('apis.urls')),
     path('auth/', include('auths.urls')),

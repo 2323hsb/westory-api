@@ -9,19 +9,21 @@ from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import LimitOffsetPagination
 
-from .models import Post, User, Reply
-from .serializers import UserSerializer, PostSerializer, ReplySerializer
+from .models import Post, User, Reply, Story, UploadImage
+from .serializers import UserSerializer, PostSerializer, ReplySerializer, StorySerializer, ImageSerializer
 
 from google.oauth2 import id_token
 from google.auth.transport import requests
 
 CLIENT_ID = '877944658856-1tr4gmmtc8nm4ur7m1p3jv2e9omm8fo3.apps.googleusercontent.com'
 
+
 class UserAPI(generics.ListAPIView):
     serializer_class = UserSerializer
 
     def get_queryset(self):
         current_user = self.request.user
+        print(current_user)
         if current_user:
             user = User.objects.filter(email=current_user)
         return user
@@ -35,6 +37,7 @@ class PostAPI(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+
 class LikesAPI(views.APIView):
     def get(self, request, *args, **kwargs):
         if not 'post_id' in self.request.query_params:
@@ -42,7 +45,7 @@ class LikesAPI(views.APIView):
             results = []
             for like_post in like_post_list:
                 results.append(like_post.pk)
-            
+
             return Response(data=results)
         else:
             post_id = self.request.query_params.get('post_id')
@@ -76,6 +79,7 @@ class LikesAPI(views.APIView):
 
         return Response(data="a")
 
+
 class ReplyAPI(generics.ListCreateAPIView):
     serializer_class = ReplySerializer
 
@@ -93,9 +97,28 @@ class ReplyAPI(generics.ListCreateAPIView):
         except Post.DoesNotExist:
             raise ValidationError("invaild post id")
 
-# class UploadImageAPI(generics.GenericAPIView, mixins.CreateModelMixin):
-#     queryset = Image.objects.all()
-#     serializer_class = ImageSerializer
 
-#     def post(self, request, *args, **kargs):
-#         return self.create(request, *args, **kargs)
+class UploadImageAPI(generics.CreateAPIView):
+    queryset = UploadImage.objects.all()
+    serializer_class = ImageSerializer
+
+    def perform_create(self, serializer):
+        current_user = self.request.user
+        if current_user:
+            image = self.request.data['image']
+            serializer.save(user=current_user, image=image)
+
+class StoryAPI(generics.ListCreateAPIView):
+    queryset = Story.objects.all().order_by('-created_date')
+    serializer_class = StorySerializer
+
+    # def get_queryset(self):
+    #     story_id = self.request.query_params.get('story_id')
+    #     return Story.objects.filter(id=story_id)
+
+    def perform_create(self, serializer):
+        current_user = self.request.user
+        if current_user:
+            title = self.request.data['title']
+            content = self.request.data['content']
+            serializer.save(user=current_user, title=title, content=content)

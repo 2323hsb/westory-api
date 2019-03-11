@@ -108,13 +108,20 @@ class UploadImageAPI(generics.CreateAPIView):
             image = self.request.data['image']
             serializer.save(user=current_user, image=image)
 
+
 class StoryAPI(generics.ListCreateAPIView):
-    queryset = Story.objects.all().order_by('-created_date')
     serializer_class = StorySerializer
 
-    # def get_queryset(self):
-    #     story_id = self.request.query_params.get('story_id')
-    #     return Story.objects.filter(id=story_id)
+    def get_queryset(self):
+        if not 'id' in self.request.query_params:
+            stories = Story.objects.all().order_by('-created_date')
+            return stories
+        else:
+            id = self.request.query_params.get('id')
+            try:
+                return Story.objects.filter(id=id)
+            except Story.DoesNotExist:
+                raise ValidationError("invaild story id")
 
     def perform_create(self, serializer):
         current_user = self.request.user

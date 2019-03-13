@@ -5,25 +5,17 @@ from django.core.serializers import serialize
 from rest_framework import views, generics, mixins
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
-from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import LimitOffsetPagination
 
 from .models import Post, User, Reply, Story, UploadImage
 from .serializers import UserSerializer, PostSerializer, ReplySerializer, StorySerializer, ImageSerializer
 
-from google.oauth2 import id_token
-from google.auth.transport import requests
-
-CLIENT_ID = '877944658856-1tr4gmmtc8nm4ur7m1p3jv2e9omm8fo3.apps.googleusercontent.com'
-
-
 class UserAPI(generics.ListAPIView):
     serializer_class = UserSerializer
 
     def get_queryset(self):
         current_user = self.request.user
-        print(current_user)
         if current_user:
             user = User.objects.filter(email=current_user)
         return user
@@ -113,13 +105,13 @@ class StoryAPI(generics.ListCreateAPIView):
     serializer_class = StorySerializer
 
     def get_queryset(self):
-        if not 'id' in self.request.query_params:
+        if not 'hash_id' in self.request.query_params:
             stories = Story.objects.all().order_by('-created_date')
             return stories
         else:
-            id = self.request.query_params.get('id')
+            hash_id = self.request.query_params.get('hash_id')
             try:
-                return Story.objects.filter(id=id)
+                return Story.objects.filter(hash_id=hash_id)
             except Story.DoesNotExist:
                 raise ValidationError("invaild story id")
 
@@ -129,3 +121,36 @@ class StoryAPI(generics.ListCreateAPIView):
             title = self.request.data['title']
             content = self.request.data['content']
             serializer.save(user=current_user, title=title, content=content)
+
+class loveStoryAPI(views.APIView):
+    serialzer_class = StorySerializer
+
+    def get(self, request, *args, **kwargs):
+        storyID = self.kwargs['hash_id']
+        try:
+            targetStory = Story.objects.get(hash_id=storyID)
+            loversCount = targetStory.lovers.all().count()
+            isLover = False
+            if self.request.user in targetStory.lovers.all():
+                isLover = True
+            results = {}
+            results['lovers_count'] = loversCount
+            results['is_lover'] = isLover
+            return Response(data=results)
+        except Story.DoesNotExist:
+            raise ValidationError('invaild story id')
+
+    def post(self, request, *args, **kwargs):
+        storyID = self.kwargs['hash_id']
+        try:
+            targetStory = Story.objects.get(hash_id=storyID)
+            isLover = self.request.data['is_lover']
+            if isLover == 'True':
+                targetStory.lovers.add(self.request.user)
+            else:
+                targetStory.lovers.remove(self.request.user)
+            targetStory.save()
+        except Story.DoesNotExist:
+            raise ValidationError("invaild story id")
+
+        return Response(data="a")

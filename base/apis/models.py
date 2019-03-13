@@ -4,6 +4,7 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save
 from django.db import models
 from django.utils import timezone
+from hashid_field import HashidAutoField
 
 from django.contrib.auth.models import (
     BaseUserManager, AbstractBaseUser, PermissionsMixin)
@@ -15,11 +16,13 @@ class UploadImage(models.Model):
     image = models.ImageField(upload_to=user_directory_path)
 
 class Story(models.Model):
+    hash_id = HashidAutoField(primary_key=True, min_length=20)
     user = models.ForeignKey(
         'User', on_delete=models.CASCADE, related_name='stories')
     title = models.TextField(blank=True, max_length=30)
     content = models.TextField(blank=True, max_length=2048)
     created_date = models.DateTimeField(auto_now_add=True)
+    lovers = models.ManyToManyField('User', default=None, blank=True, related_name='love_stories')
 
     @property
     def user_username(self):

@@ -11,6 +11,7 @@ from rest_framework.pagination import LimitOffsetPagination
 from .models import Post, User, Reply, Story, UploadImage
 from .serializers import UserSerializer, PostSerializer, ReplySerializer, StorySerializer, ImageSerializer
 
+
 class UserAPI(generics.ListAPIView):
     serializer_class = UserSerializer
 
@@ -122,6 +123,7 @@ class StoryAPI(generics.ListCreateAPIView):
             content = self.request.data['content']
             serializer.save(user=current_user, title=title, content=content)
 
+
 class loveStoryAPI(views.APIView):
     serialzer_class = StorySerializer
 
@@ -145,12 +147,15 @@ class loveStoryAPI(views.APIView):
         try:
             targetStory = Story.objects.get(hash_id=storyID)
             isLover = self.request.data['is_lover']
-            if isLover == 'True':
+            if isLover == 'true':
                 targetStory.lovers.add(self.request.user)
             else:
                 targetStory.lovers.remove(self.request.user)
             targetStory.save()
+            results = {}
+            loversCount = targetStory.lovers.all().count()
+            results['lovers_count'] = loversCount
+            results['is_lover'] = isLover
+            return Response(data=results)
         except Story.DoesNotExist:
             raise ValidationError("invaild story id")
-
-        return Response(data="a")

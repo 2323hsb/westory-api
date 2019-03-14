@@ -19,8 +19,8 @@ class Story(models.Model):
     hash_id = HashidAutoField(primary_key=True, min_length=20)
     user = models.ForeignKey(
         'User', on_delete=models.CASCADE, related_name='stories')
-    title = models.TextField(blank=True, max_length=30)
-    content = models.TextField(blank=True, max_length=2048)
+    title = models.TextField(blank=True, max_length=100)
+    content = models.TextField(blank=True)
     created_date = models.DateTimeField(auto_now_add=True)
     lovers = models.ManyToManyField('User', default=None, blank=True, related_name='love_stories')
 

@@ -38,19 +38,26 @@ class ReplySerializer(serializers.ModelSerializer):
 
 
 class StorySerializer(serializers.ModelSerializer):
-    hash_id = serializers.PrimaryKeyRelatedField(pk_field = HashidSerializerCharField(
-        source_field = 'apis.Story.hash_id'), read_only=True)
+    hash_id = serializers.PrimaryKeyRelatedField(pk_field=HashidSerializerCharField(
+        source_field='apis.Story.hash_id'), read_only=True)
     user_username = serializers.ReadOnlyField()
     user_profile_img = serializers.ReadOnlyField()
     lovers_count = serializers.SerializerMethodField()
+    is_lover = serializers.SerializerMethodField()
 
     def get_lovers_count(self, obj):
         return obj.lovers.count()
 
+    def get_is_lover(self, obj):
+        isLover = False
+        if self.context['request'].user in obj.lovers.all():
+            isLover = True
+        return isLover
+
     class Meta:
         model = Story
         fields = ['hash_id', 'user_username', 'user_profile_img',
-                  'title', 'content', 'created_date', 'lovers_count']
+                  'title', 'content', 'created_date', 'lovers_count', 'is_lover']
 
 
 class ImageSerializer(serializers.ModelSerializer):

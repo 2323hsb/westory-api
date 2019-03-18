@@ -7,6 +7,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.authtoken.views import ObtainAuthToken
 
 from .models import Post, User, Reply, Story, UploadImage, Comment
 from .serializers import UserSerializer, PostSerializer, ReplySerializer, StorySerializer, ImageSerializer, CommentSerializer
@@ -102,7 +103,7 @@ class UploadImageAPI(generics.CreateAPIView):
             serializer.save(user=current_user, image=image)
 
 
-class StoryAPI(generics.ListCreateAPIView):
+class StoryAPI(generics.ListCreateAPIView, ObtainAuthToken):
     serializer_class = StorySerializer
 
     def get_queryset(self):

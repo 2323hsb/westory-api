@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Post, Reply, Story, UploadImage
+from .models import User, Post, Reply, Story, UploadImage, Comment
 from hashid_field.rest import HashidSerializerCharField
 
 
@@ -33,6 +33,14 @@ class ReplySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Reply
+        fields = ['user_username', 'user_profile_img',
+                  'content', 'created_date']
+
+class CommentSerializer(serializers.ModelSerializer):
+    user_username = serializers.ReadOnlyField()
+    user_profile_img = serializers.ReadOnlyField()
+    class Meta:
+        model = Comment
         fields = ['user_username', 'user_profile_img',
                   'content', 'created_date']
 

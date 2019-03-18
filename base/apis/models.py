@@ -9,11 +9,16 @@ from hashid_field import HashidAutoField
 from django.contrib.auth.models import (
     BaseUserManager, AbstractBaseUser, PermissionsMixin)
 
+
 def user_directory_path(instance, filename):
     return '{0}/{1}'.format(instance.user.username, filename)
+
+
 class UploadImage(models.Model):
-    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='uploadImage')
+    user = models.ForeignKey(
+        'User', on_delete=models.CASCADE, related_name='uploadImage')
     image = models.ImageField(upload_to=user_directory_path)
+
 
 class Story(models.Model):
     hash_id = HashidAutoField(primary_key=True, min_length=20)
@@ -22,7 +27,8 @@ class Story(models.Model):
     title = models.TextField(blank=True, max_length=100)
     content = models.TextField(blank=True)
     created_date = models.DateTimeField(auto_now_add=True)
-    lovers = models.ManyToManyField('User', default=None, blank=True, related_name='love_stories')
+    lovers = models.ManyToManyField(
+        'User', default=None, blank=True, related_name='love_stories')
 
     @property
     def user_username(self):
@@ -31,6 +37,7 @@ class Story(models.Model):
     @property
     def user_profile_img(self):
         return self.user.profile_img
+
 
 class Post(models.Model):
     user = models.ForeignKey(
@@ -55,6 +62,23 @@ class Reply(models.Model):
         'User', on_delete=models.CASCADE, related_name='replys')
     post = models.ForeignKey(
         'Post', on_delete=models.CASCADE, related_name='replys')
+    content = models.TextField(max_length=2048)
+    created_date = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def user_username(self):
+        return self.user.username
+
+    @property
+    def user_profile_img(self):
+        return self.user.profile_img
+
+
+class Comment(models.Model):
+    user = models.ForeignKey(
+        'User', on_delete=models.CASCADE, related_name='comments')
+    story = models.ForeignKey(
+        'Story', on_delete=models.CASCADE, related_name='comments')
     content = models.TextField(max_length=2048)
     created_date = models.DateTimeField(auto_now_add=True)
 

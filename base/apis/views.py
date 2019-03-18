@@ -8,8 +8,8 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import LimitOffsetPagination
 
-from .models import Post, User, Reply, Story, UploadImage
-from .serializers import UserSerializer, PostSerializer, ReplySerializer, StorySerializer, ImageSerializer
+from .models import Post, User, Reply, Story, UploadImage, Comment
+from .serializers import UserSerializer, PostSerializer, ReplySerializer, StorySerializer, ImageSerializer, CommentSerializer
 
 
 class UserAPI(generics.ListAPIView):
@@ -122,6 +122,22 @@ class StoryAPI(generics.ListCreateAPIView):
             title = self.request.data['title']
             content = self.request.data['content']
             serializer.save(user=current_user, title=title, content=content)
+
+
+class CommentAPI(generics.ListCreateAPIView):
+    serializer_class = CommentSerializer
+
+    def get_queryset(self):
+        storyID = self.kwargs['hash_id']
+        return Comment.objects.filter(story=storyID).order_by('-created_date')
+
+    def perform_create(self, serializer):
+        storyID = self.kwargs['hash_id']
+        try:
+            target_story = Story.objects.get(hash_id=storyID)
+            serializer.save(user=self.request.user, story=target_story)
+        except Story.DoesNotExist:
+            raise ValidationError("invaild Story id")
 
 
 class loveStoryAPI(views.APIView):

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
-from .views import UserAPI, PostAPI, ReplyAPI, LikesAPI, StoryAPI, UploadImageAPI, loveStoryAPI
+from .views import UserAPI, PostAPI, ReplyAPI, LikesAPI, StoryAPI, UploadImageAPI, loveStoryAPI, CommentAPI
 from rest_framework.authtoken.views import obtain_auth_token
 
 urlpatterns = [
@@ -10,5 +10,6 @@ urlpatterns = [
     path('reply', ReplyAPI.as_view()),
     path('story', StoryAPI.as_view()),
     path('story/<str:hash_id>/love', loveStoryAPI.as_view()),
+    path('story/<str:hash_id>/comment', CommentAPI.as_view()),
     path('uploadImage', UploadImageAPI.as_view()),
 ]

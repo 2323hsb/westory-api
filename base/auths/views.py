@@ -6,6 +6,7 @@ from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
+from rest_framework.exceptions import APIException
 
 from google.oauth2 import id_token
 from google.auth.transport import requests
@@ -75,11 +76,7 @@ class SignIn(ObtainAuthToken):
             idinfo = id_token.verify_oauth2_token(
                 user_id_token, requests.Request(), CLIENT_ID)
             if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
-                json_response = {
-                    'status': 'fail',
-                    'message': 'invalid id',
-                }
-                return Response(json_response)
+                raise APIException('Some Error')
 
             google_id = idinfo['sub']
             try:
@@ -97,8 +94,4 @@ class SignIn(ObtainAuthToken):
                 }
                 return Response(json_response)
         except ValueError:
-            json_response = {
-                'status': 'fail',
-                'message': 'invalid id',
-            }
-            return Response(json_response)
+            raise APIException('Some Error')

@@ -9,8 +9,8 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.authtoken.views import ObtainAuthToken
 
-from .models import Post, User, Reply, Story, UploadImage, Comment
-from .serializers import UserSerializer, PostSerializer, ReplySerializer, StorySerializer, ImageSerializer, CommentSerializer
+from .models import *
+from .serializers import *
 
 
 class UserAPI(generics.ListAPIView):
@@ -107,15 +107,8 @@ class StoryAPI(generics.ListCreateAPIView, ObtainAuthToken):
     serializer_class = StorySerializer
 
     def get_queryset(self):
-        if not 'hash_id' in self.request.query_params:
-            stories = Story.objects.all().order_by('-created_date')
-            return stories
-        else:
-            hash_id = self.request.query_params.get('hash_id')
-            try:
-                return Story.objects.filter(hash_id=hash_id)
-            except Story.DoesNotExist:
-                raise ValidationError("invaild story id")
+        stories = Story.objects.all().order_by('-created_date')
+        return stories
 
     def perform_create(self, serializer):
         current_user = self.request.user
@@ -123,6 +116,26 @@ class StoryAPI(generics.ListCreateAPIView, ObtainAuthToken):
             title = self.request.data['title']
             content = self.request.data['content']
             serializer.save(user=current_user, title=title, content=content)
+
+
+class StoryDetailAPI(ObtainAuthToken, generics.RetrieveUpdateDestroyAPIView):
+    serialzer_class = StorySerializer
+    # lookup_field = 'hash_id'
+    lookup_url_kwarg = 'hash_id'
+    # queryset = Story.objects.filter(hash_id=lookup_url_kwarg)
+    def get_queryset(self):
+        print(self.lookup_url_kwarg)
+    # def get_queryset(self):
+    #     storyID = self.kwargs['hash_id']
+    #     try:
+    #         target_stories = Story.objects.filter(hash_id=storyID)
+    #         target_story = target_stories[0]
+    #         target_story.view_count += 1
+    #         target_story.save()
+    #         return target_stories
+
+    #     except Story.DoesNotExist:
+    #         raise ValidationError("invaild story id")
 
 
 class CommentAPI(generics.ListCreateAPIView):

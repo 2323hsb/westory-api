@@ -29,6 +29,7 @@ class Story(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     lovers = models.ManyToManyField(
         'User', default=None, blank=True, related_name='love_stories')
+    view_count = models.PositiveIntegerField(default=0)
 
     @property
     def user_username(self):

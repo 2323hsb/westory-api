@@ -65,7 +65,7 @@ class StorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Story
         fields = ['hash_id', 'user_username', 'user_profile_img',
-                  'title', 'content', 'created_date', 'lovers_count', 'is_lover']
+                  'title', 'content', 'created_date', 'lovers_count', 'is_lover', 'view_count']
 
 
 class ImageSerializer(serializers.ModelSerializer):

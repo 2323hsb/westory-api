@@ -1,16 +1,23 @@
-from django.shortcuts import render
-from django.http.response import HttpResponse
-from django.core.serializers import serialize
-
-from rest_framework import views, generics, mixins
-from rest_framework.renderers import JSONRenderer
+from rest_framework import views, generics
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.permissions import BasePermission, IsAuthenticated, SAFE_METHODS
 
-from .models import *
+from .models import Post, Story, User, Reply, Comment, User
 from .serializers import *
+
+from rest_framework.parsers import JSONParser
+from rest_framework.renderers import BrowsableAPIRenderer, JSONRenderer
+
+
+apis_renderer = (BrowsableAPIRenderer, JSONRenderer, )
+
+
+class ReadOnly(BasePermission):
+    def has_permission(self, request, view):
+        return request.method in SAFE_METHODS
 
 
 class UserAPI(generics.ListAPIView):
@@ -103,12 +110,18 @@ class UploadImageAPI(generics.CreateAPIView):
             serializer.save(user=current_user, image=image)
 
 
-class StoryAPI(generics.ListCreateAPIView, ObtainAuthToken):
+class StoryAPI(generics.ListCreateAPIView):
+    renderer_classes = apis_renderer
     serializer_class = StorySerializer
+    permission_classes = (IsAuthenticated | ReadOnly,)
 
     def get_queryset(self):
-        stories = Story.objects.all().order_by('-created_date')
-        return stories
+        queryset = Story.objects.all().order_by('-created_date')
+        story_id = self.kwargs.get('hash_id')
+        if story_id is not None:
+            queryset = queryset.filter(hash_id=story_id)
+            queryset.update(view_count=queryset[0].view_count+1)
+        return queryset
 
     def perform_create(self, serializer):
         current_user = self.request.user
@@ -116,27 +129,6 @@ class StoryAPI(generics.ListCreateAPIView, ObtainAuthToken):
             title = self.request.data['title']
             content = self.request.data['content']
             serializer.save(user=current_user, title=title, content=content)
-
-
-class StoryDetailAPI(ObtainAuthToken, generics.RetrieveUpdateDestroyAPIView):
-    serialzer_class = StorySerializer
-    # lookup_field = 'hash_id'
-    lookup_url_kwarg = 'hash_id'
-    # queryset = Story.objects.filter(hash_id=lookup_url_kwarg)
-    def get_queryset(self):
-        print(self.lookup_url_kwarg)
-    # def get_queryset(self):
-    #     storyID = self.kwargs['hash_id']
-    #     try:
-    #         target_stories = Story.objects.filter(hash_id=storyID)
-    #         target_story = target_stories[0]
-    #         target_story.view_count += 1
-    #         target_story.save()
-    #         return target_stories
-
-    #     except Story.DoesNotExist:
-    #         raise ValidationError("invaild story id")
-
 
 class CommentAPI(generics.ListCreateAPIView):
     serializer_class = CommentSerializer

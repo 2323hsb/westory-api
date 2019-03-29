@@ -18,12 +18,12 @@ import json
 HTTP_ACCEPT = 'HTTP_ACCEPT'
 CLIENT_ID = '877944658856-1tr4gmmtc8nm4ur7m1p3jv2e9omm8fo3.apps.googleusercontent.com'
 
+
 class SignUpWithGoogle(ObtainAuthToken):
-    parser_classes = (JSONParser,)
-    renderer_classes = (JSONRenderer,)
+    # parser_classes = (JSONParser,)
+    # renderer_classes = (JSONRenderer,)
 
     def post(self, request):
-        print("tetst")
         token_data = json.loads(request.body)
         user_id_token = token_data['id_token']
         try:
@@ -40,8 +40,6 @@ class SignUpWithGoogle(ObtainAuthToken):
             google_email = idinfo['email']
             google_name = idinfo['name']
             google_profile_img_url = idinfo['picture']
-
-            
 
             if User.objects.filter(google_id=google_id):
                 json_response = {

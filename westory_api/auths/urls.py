@@ -6,5 +6,5 @@ from rest_framework.authtoken import views
 urlpatterns = [
     path('signUpWithGoogle', SignUpWithGoogle.as_view()),
     path('signIn', SignIn.as_view()),
-    path('api-token-auth/', views.obtain_auth_token),
+    # path('api-token-auth/', views.obtain_auth_token),
 ]

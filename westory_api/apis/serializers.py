@@ -36,9 +36,11 @@ class ReplySerializer(serializers.ModelSerializer):
         fields = ['user_username', 'user_profile_img',
                   'content', 'created_date']
 
+
 class CommentSerializer(serializers.ModelSerializer):
     user_username = serializers.ReadOnlyField()
     user_profile_img = serializers.ReadOnlyField()
+
     class Meta:
         model = Comment
         fields = ['user_username', 'user_profile_img',
@@ -64,8 +66,9 @@ class StorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Story
-        fields = ['hash_id', 'user_username', 'user_profile_img',
-                  'title', 'content', 'created_date', 'lovers_count', 'is_lover', 'view_count']
+        fields = ('hash_id', 'user_username', 'user_profile_img',
+                  'title', 'content', 'created_date', 'lovers_count', 'is_lover', 'view_count')
+        lookup_field = 'hash_id'
 
 
 class ImageSerializer(serializers.ModelSerializer):

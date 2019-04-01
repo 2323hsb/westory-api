@@ -116,6 +116,7 @@ class StoryAPI(generics.ListCreateAPIView):
     permission_classes = (IsAuthenticated | ReadOnly,)
 
     def get_queryset(self):
+        print(self.request.user)
         queryset = Story.objects.all().order_by('-created_date')
         story_id = self.kwargs.get('hash_id')
         if story_id is not None:
@@ -123,12 +124,32 @@ class StoryAPI(generics.ListCreateAPIView):
             queryset.update(view_count=queryset[0].view_count+1)
         return queryset
 
+    def post(self, request, *args, **kwargs):
+        last_path = get_last_url_path(request.get_full_path())
+        if last_path == "love":
+            try:
+                target = Story.objects.get(hash_id=self.kwargs['hash_id'])
+                user_is_lover = request.user in target.lovers.all()
+                if user_is_lover:
+                    target.lovers.remove(self.request.user)
+                else:
+                    target.lovers.add(self.request.user)
+                target.save()
+                return Response(data={
+                    'user_is_lover': request.user in target.lovers.all(),
+                    'lovers_count': target.lovers.all().count()
+                })
+            except Story.DoesNotExist:
+                raise ValidationError("invaild story id")
+        return super().post(request, *args, **kwargs)
+
     def perform_create(self, serializer):
         current_user = self.request.user
         if current_user:
             title = self.request.data['title']
             content = self.request.data['content']
             serializer.save(user=current_user, title=title, content=content)
+
 
 class CommentAPI(generics.ListCreateAPIView):
     serializer_class = CommentSerializer
@@ -181,3 +202,14 @@ class loveStoryAPI(views.APIView):
             return Response(data=results)
         except Story.DoesNotExist:
             raise ValidationError("invaild story id")
+
+
+def get_last_url_path(fullpath):
+    split_path = fullpath.split("/")
+    return split_path[-1]
+
+# def get_is_lover():
+#     story_id = self.kwargs.get('hash_id')
+#     if story_id is not None:
+#         queryset = queryset.filter(hash_id=story_id)
+#         queryset.update(view_count=queryset[0].view_count+1)

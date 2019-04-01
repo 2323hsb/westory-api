@@ -53,22 +53,19 @@ class StorySerializer(serializers.ModelSerializer):
     user_username = serializers.ReadOnlyField()
     user_profile_img = serializers.ReadOnlyField()
     lovers_count = serializers.SerializerMethodField()
-    is_lover = serializers.SerializerMethodField()
+    user_is_lover = serializers.SerializerMethodField()
 
     def get_lovers_count(self, obj):
         return obj.lovers.count()
 
-    def get_is_lover(self, obj):
-        isLover = False
-        if self.context['request'].user in obj.lovers.all():
-            isLover = True
-        return isLover
+    def get_user_is_lover(self, obj):
+        print(self.context['request'].user)
+        return self.context['request'].user in obj.lovers.all()
 
     class Meta:
         model = Story
         fields = ('hash_id', 'user_username', 'user_profile_img',
-                  'title', 'content', 'created_date', 'lovers_count', 'is_lover', 'view_count')
-        lookup_field = 'hash_id'
+                  'title', 'content', 'created_date', 'lovers_count', 'user_is_lover', 'view_count')
 
 
 class ImageSerializer(serializers.ModelSerializer):

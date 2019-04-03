@@ -30,6 +30,7 @@ class Story(models.Model):
     lovers = models.ManyToManyField(
         'User', default=None, blank=True, related_name='love_stories')
     view_count = models.PositiveIntegerField(default=0)
+    # comments = models.('Comment', default=None, blank=True, related_name='')
 
     @property
     def user_username(self):

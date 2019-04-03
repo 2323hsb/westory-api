@@ -4,6 +4,11 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.permissions import BasePermission, IsAuthenticated, SAFE_METHODS
+from rest_framework.reverse import reverse
+from rest_framework.decorators import action
+from rest_framework import viewsets
+from rest_framework import renderers
+
 
 from .models import Post, Story, User, Reply, Comment, User
 from .serializers import *
@@ -20,14 +25,24 @@ class ReadOnly(BasePermission):
         return request.method in SAFE_METHODS
 
 
-class UserAPI(generics.ListAPIView):
-    serializer_class = UserSerializer
+class ApiRoot(views.APIView):
+    permission_classes = (IsAuthenticated | ReadOnly,)
 
-    def get_queryset(self):
-        current_user = self.request.user
-        if current_user:
-            user = User.objects.filter(email=current_user)
-        return user
+    def get(self, request, format=None):
+        return Response({
+            'users': reverse('user-list', request=request, format=format),
+            'stories': reverse('story-list', request=request, format=format)
+        })
+
+
+# class UserAPI(generics.ListAPIView):
+#     serializer_class = UserSerializer
+
+#     def get_queryset(self):
+#         current_user = self.request.user
+#         if current_user:
+#             user = User.objects.filter(email=current_user)
+#         return user
 
 
 class PostAPI(generics.ListCreateAPIView):
@@ -110,106 +125,125 @@ class UploadImageAPI(generics.CreateAPIView):
             serializer.save(user=current_user, image=image)
 
 
-class StoryAPI(generics.ListCreateAPIView):
-    renderer_classes = apis_renderer
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all().order_by('-created_date')
+    serializer_class = UserSerializer
+    permission_classes = (IsAuthenticated | ReadOnly,)
+
+
+class StoryViewSet(viewsets.ModelViewSet):
+    queryset = Story.objects.all().order_by('-created_date')
     serializer_class = StorySerializer
     permission_classes = (IsAuthenticated | ReadOnly,)
 
-    def get_queryset(self):
-        print(self.request.user)
-        queryset = Story.objects.all().order_by('-created_date')
-        story_id = self.kwargs.get('hash_id')
-        if story_id is not None:
-            queryset = queryset.filter(hash_id=story_id)
-            queryset.update(view_count=queryset[0].view_count+1)
-        return queryset
-
-    def post(self, request, *args, **kwargs):
-        last_path = get_last_url_path(request.get_full_path())
-        if last_path == "love":
-            try:
-                target = Story.objects.get(hash_id=self.kwargs['hash_id'])
-                user_is_lover = request.user in target.lovers.all()
-                if user_is_lover:
-                    target.lovers.remove(self.request.user)
-                else:
-                    target.lovers.add(self.request.user)
-                target.save()
-                return Response(data={
-                    'user_is_lover': request.user in target.lovers.all(),
-                    'lovers_count': target.lovers.all().count()
-                })
-            except Story.DoesNotExist:
-                raise ValidationError("invaild story id")
-        return super().post(request, *args, **kwargs)
+    @action(detail=True, renderer_classes=[renderers.StaticHTMLRenderer])
+    def comment(self, request, *args, **kwargs):
+        story = self.get_object()
+        return Response('hi')
 
     def perform_create(self, serializer):
-        current_user = self.request.user
-        if current_user:
-            title = self.request.data['title']
-            content = self.request.data['content']
-            serializer.save(user=current_user, title=title, content=content)
+        serializer.save(user=self.request.user)
 
 
-class CommentAPI(generics.ListCreateAPIView):
-    serializer_class = CommentSerializer
+# class CommentViewSet(viewsets.ModelViewSet):
+#     queryset = Comment.objects.all()
+#     serializer_class = CommentSerializer
 
-    def get_queryset(self):
-        storyID = self.kwargs['hash_id']
-        return Comment.objects.filter(story=storyID).order_by('-created_date')
+# class StoryList(generics.ListCreateAPIView):
+#     # renderer_classes = apis_renderer
+#     # serializer_class = StorySerializer
+#     # permission_classes = (IsAuthenticated | ReadOnly,)
+#     queryset = Story.objects.all().order_by('-created_date')
+#     # lookup_field = "hash_id"
 
-    def perform_create(self, serializer):
-        storyID = self.kwargs['hash_id']
-        try:
-            target_story = Story.objects.get(hash_id=storyID)
-            serializer.save(user=self.request.user, story=target_story)
-        except Story.DoesNotExist:
-            raise ValidationError("invaild Story id")
+#     # def get(self, request, *args, **kwargs):
+#     #     return self.list(request, *args, **kwargs)
 
 
-class loveStoryAPI(views.APIView):
-    serialzer_class = StorySerializer
+#     permission_classes = (IsAuthenticated | ReadOnly,)
+#     def get(self, request, format=None):
+#         return Response({
+#             'stories': reverse('story-detail', 'hash', request=request, format=format)
+#         })
 
-    def get(self, request, *args, **kwargs):
-        storyID = self.kwargs['hash_id']
-        try:
-            targetStory = Story.objects.get(hash_id=storyID)
-            loversCount = targetStory.lovers.all().count()
-            isLover = False
-            if self.request.user in targetStory.lovers.all():
-                isLover = True
-            results = {}
-            results['lovers_count'] = loversCount
-            results['is_lover'] = isLover
-            return Response(data=results)
-        except Story.DoesNotExist:
-            raise ValidationError('invaild story id')
+# class StoryDetail(generics.RetrieveUpdateDestroyAPIView):
+#     renderer_classes = apis_renderer
+#     queryset = Story.objects.all()
+#     serializer_class = StorySerializer
+#     lookup_field = "hash_id"
 
-    def post(self, request, *args, **kwargs):
-        storyID = self.kwargs['hash_id']
-        try:
-            targetStory = Story.objects.get(hash_id=storyID)
-            isLover = self.request.data['is_lover']
-            if isLover == 'true':
-                targetStory.lovers.add(self.request.user)
-            else:
-                targetStory.lovers.remove(self.request.user)
-            targetStory.save()
-            results = {}
-            loversCount = targetStory.lovers.all().count()
-            results['lovers_count'] = loversCount
-            results['is_lover'] = isLover
-            return Response(data=results)
-        except Story.DoesNotExist:
-            raise ValidationError("invaild story id")
+#     def get_queryset(self):
+#         queryset = Story.objects.all().order_by('-created_date')
+#         story_id = self.kwargs.get('hash_id')
+#         if story_id is not None:
+#             queryset = queryset.filter(hash_id=story_id)
+#             queryset.update(view_count=queryset[0].view_count+1)
+#         return queryset
+
+#     def put(self, request, *args, **kwargs):
+#         return self.update(request, *args, **kwargs)
+
+#     def delete(self, request, *args, **kwargs):
+#         return self.destroy(request, *args, **kwargs)
+
+
+# class StoryAPI(generics.ListCreateAPIView):
+#     renderer_classes = apis_renderer
+#     serializer_class = StorySerializer
+#     permission_classes = (IsAuthenticated | ReadOnly,)
+
+#     def get_queryset(self):
+#         print(self.request.user)
+#         queryset = Story.objects.all().order_by('-created_date')
+#         story_id = self.kwargs.get('hash_id')
+#         if story_id is not None:
+#             queryset = queryset.filter(hash_id=story_id)
+#             queryset.update(view_count=queryset[0].view_count+1)
+#         return queryset
+
+#     def post(self, request, *args, **kwargs):
+#         last_path = get_last_url_path(request.get_full_path())
+#         if last_path == "love":
+#             try:
+#                 target = Story.objects.get(hash_id=self.kwargs['hash_id'])
+#                 user_is_lover = request.user in target.lovers.all()
+#                 if user_is_lover:
+#                     target.lovers.remove(self.request.user)
+#                 else:
+#                     target.lovers.add(self.request.user)
+#                 target.save()
+#                 return Response(data={
+#                     'user_is_lover': request.user in target.lovers.all(),
+#                     'lovers_count': target.lovers.all().count()
+#                 })
+#             except Story.DoesNotExist:
+#                 raise ValidationError("invaild story id")
+#         return super().post(request, *args, **kwargs)
+
+#     def perform_create(self, serializer):
+#         current_user = self.request.user
+#         if current_user:
+#             title = self.request.data['title']
+#             content = self.request.data['content']
+#             serializer.save(user=current_user, title=title, content=content)
+
+
+# class CommentAPI(generics.ListCreateAPIView):
+#     serializer_class = CommentSerializer
+
+#     def get_queryset(self):
+#         storyID = self.kwargs['hash_id']
+#         return Comment.objects.filter(story=storyID).order_by('-created_date')
+
+#     def perform_create(self, serializer):
+#         storyID = self.kwargs['hash_id']
+#         try:
+#             target_story = Story.objects.get(hash_id=storyID)
+#             serializer.save(user=self.request.user, story=target_story)
+#         except Story.DoesNotExist:
+#             raise ValidationError("invaild Story id")
 
 
 def get_last_url_path(fullpath):
     split_path = fullpath.split("/")
     return split_path[-1]
-
-# def get_is_lover():
-#     story_id = self.kwargs.get('hash_id')
-#     if story_id is not None:
-#         queryset = queryset.filter(hash_id=story_id)
-#         queryset.update(view_count=queryset[0].view_count+1)

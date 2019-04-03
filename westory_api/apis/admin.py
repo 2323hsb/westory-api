@@ -3,7 +3,7 @@ from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 
-from .models import Post, User, Story, UploadImage
+from .models import Post, User, Story, UploadImage, Comment
 
 class UserAdmin(BaseUserAdmin):
     list_display = ('email', 'is_staff')
@@ -24,8 +24,9 @@ class UserAdmin(BaseUserAdmin):
     ordering = ('email',)
     filter_horizontal = ()
 
-admin.site.register(Post)
+# admin.site.register(Post)
 admin.site.register(User, UserAdmin)
 admin.site.unregister(Group)
-admin.site.register(UploadImage)
+# admin.site.register(UploadImage)
 admin.site.register(Story)
+admin.site.register(Comment)

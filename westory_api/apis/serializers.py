@@ -46,9 +46,8 @@ class StorySerializer(serializers.HyperlinkedModelSerializer):
         many=False, view_name='user-detail', read_only=True)
     lovers_count = serializers.SerializerMethodField()
     user_is_lover = serializers.SerializerMethodField()
-    # comments = serializers.HyperlinkedRelatedField(
-    #     many=True, view_name='comment-detail', read_only=True)
-    comments = serializers.HyperlinkedIdentityField(view_name='story-comment')
+    comments = serializers.HyperlinkedRelatedField(view_name='comment-detail', many=True, read_only=True)
+    view_count = serializers.ReadOnlyField()
 
     def get_lovers_count(self, obj):
         return obj.lovers.count()
@@ -59,11 +58,10 @@ class StorySerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Story
         fields = ('url', 'user', 'title', 'content',
-                  'created_date', 'view_count', 'lovers_count', 'user_is_lover', 'comments')
-        # fields = ('url', 'hash_id', 'title', 'content', 'created_date', 'view_count')
+                  'created_date', 'view_count', 'lovers_count', 'user_is_lover', 'comments', )
 
 
-class CommentSerializer(serializers.HyperlinkedModelSerializer):
+class CommentSerializer(serializers.ModelSerializer):
     user = serializers.HyperlinkedRelatedField(
         many=False, view_name='user-detail', read_only=True)
     story = serializers.HyperlinkedRelatedField(
@@ -71,7 +69,7 @@ class CommentSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ['url', 'user', 'story', 'created_date', 'content', ]
+        fields = ['user', 'story', 'created_date', 'content', ]
 
 # class StorySerializer(serializers.HyperlinkedModelSerializer):
     # hash_id = serializers.PrimaryKeyRelatedField(pk_field=HashidSerializerCharField(

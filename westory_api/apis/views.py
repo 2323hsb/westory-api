@@ -135,6 +135,9 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = (IsAuthenticated | ReadOnly,)
 
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
 
 class StoryViewSet(viewsets.ModelViewSet):
     queryset = Story.objects.all().order_by('-created_date')
@@ -144,6 +147,19 @@ class StoryViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    # def list(self, request, *args, **kwargs):
+    #     queryset = self.filter_queryset(self.get_queryset())
+    #     # print(queryset.count())
+
+    #     page = self.paginate_queryset(queryset)
+    #     if page is not None:
+    #         serializer = self.get_serializer(page, many=True)
+    #         print(serializer.data)
+    #         return self.get_paginated_response(serializer.data)
+
+    #     serializer = self.get_serializer(queryset, many=True)
+    #     return Response(serializer.data)
 
     def retrieve(self, request, *args, **kwargs):
         story = self.get_object()

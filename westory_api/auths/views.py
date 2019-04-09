@@ -80,9 +80,9 @@ class SignIn(ObtainAuthToken):
             try:
                 user = User.objects.get(google_id=google_id)
                 token, _ = Token.objects.get_or_create(user=user)
-
                 return Response({
                     'status': 'success',
+                    'user_id': str(user.hash_id),
                     'access_token': token.key
                 })
             except User.DoesNotExist:

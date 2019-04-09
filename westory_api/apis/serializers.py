@@ -41,6 +41,15 @@ class ReplySerializer(serializers.ModelSerializer):
                   'content', 'created_date']
 
 
+class StoryListSerializer(serializers.HyperlinkedModelSerializer):
+    user = serializers.HyperlinkedRelatedField(
+        many=False, view_name='user-detail', read_only=True)
+    view_count = serializers.ReadOnlyField()
+    class Meta:
+        model = Story
+        field = ('url', 'user', 'title', 'content', 'created_date', 'view_count',)
+
+
 class StorySerializer(serializers.HyperlinkedModelSerializer):
     user = serializers.HyperlinkedRelatedField(
         many=False, view_name='user-detail', read_only=True)

@@ -124,6 +124,8 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser, PermissionsMixin):
 
+    hash_id = HashidAutoField(primary_key=True, min_length=20)
+
     email = models.EmailField(
         db_index=True,
         max_length=255,
